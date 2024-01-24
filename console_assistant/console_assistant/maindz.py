@@ -9,6 +9,17 @@ from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
 from abc import ABC, abstractmethod
 
+from dop2 import Field
+from dop2 import Name
+from dop2 import Phone
+from dop2 import Email
+from dop2 import Birthday
+from dop2 import Address
+from dop2 import Notes
+from dop2 import NoteManager
+from dop2 import AddressBookIterator
+
+
 # Отримання поточного каталогу, в якому знаходиться виконуваний файл
 CURRENT_DIRECTORY = path.dirname(path.realpath(__file__))
 
@@ -48,13 +59,14 @@ class ConsoleUserInterface(UserInterface):
             table.add_row(
                 str(record.name.value),
                 "; ".join(str(phone.value) for phone in record.phones),
-                record.birthday.strftime('%Y-%m-%d') if record.birthday else "",
+                str(record.birthday) if isinstance(record.birthday, Birthday) else "",
                 str(record.address.value) if record.address else "",
                 str(record.email.value) if record.email else "",
             )
 
         console.print(table)
         print()
+
 
     def display_notes(self, notes):
         print("Notes:")
@@ -123,7 +135,12 @@ class Email(Field):
 
 class Birthday(Field):
     def __init__(self, value):
+        # Убедимся, что value - это объект datetime
+        if not isinstance(value, datetime):
+            raise ValueError("Invalid birthday format. Use a datetime object.")
         super().__init__(value)
+    
+    
 
 class Address(Field):
     def __init__(self, value):
@@ -142,7 +159,7 @@ class Record:
         self.phones = []
         self.email = None
         self.birthday = None
-        self.address = None
+        self.address = Address(None)
         self.notes = []
 
     def add_phone(self, phone):
@@ -170,9 +187,10 @@ class Record:
         self.email.value = new_email
 
     def set_birthday(self, birthday):
-        # Перевірка коректності формату дати та збереження в атрибут birthday
+        # Преобразуйте строку в объект datetime перед созданием Birthday
         try:
-            self.birthday.value = datetime.strptime(birthday, "%Y-%m-%d").date()
+            birthday_datetime = datetime.strptime(birthday,"%Y-%m-%d").date()
+            self.birthday = Birthday(birthday_datetime)
         except ValueError:
             raise ValueError("Invalid birthday date format. Use YYYY-MM-DD.")
 
@@ -342,10 +360,14 @@ def fun_add_contact(address_book, name):
 
     while birthday != 'c':
         try:
+            # Встановлює день народження для запису контакту
+            birthday = datetime.strptime(birthday, "%Y-%m-%d").date()
             record.set_birthday(birthday)
             break
         except ValueError:
+            # Обробка виключення, якщо введено некоректний формат дня народження
             birthday = input(f'Enter the birthday (Year-month-day) (c - close): ')
+
 
     email = input(f'Enter the email address (c - close): ')
     while email != 'c':
@@ -374,7 +396,7 @@ def fun_edit_contact(address_book):
                     new_phone = input("Enter new phone number: ")
                     contact_edit.edit_phone(contact_edit.phones[0].value, new_phone)
                 elif edit == 'birthday':
-                    new_birthday = input('Enter new birthday: ')
+                    new_birthday = datetime.strptime(input('Enter new birthday: '), "%Y-%m-%d").date()
                     contact_edit.set_birthday(new_birthday)
                 elif edit == 'address':
                     new_address = input('Enter new address: ')
