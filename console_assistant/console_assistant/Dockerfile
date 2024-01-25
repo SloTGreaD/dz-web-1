@@ -3,7 +3,7 @@
 FROM python:3.11-slim
 
 # Встановимо змінну середовища
-ENV APP_HOME /app
+ENV APP_HOME /main
 
 # Встановимо робочу директорію всередині контейнера
 WORKDIR $APP_HOME
@@ -18,4 +18,4 @@ RUN pip install -r requirements.txt
 EXPOSE 5000
 
 # Запустимо наш застосунок всередині контейнера
-ENTRYPOINT ["python", "app.py"]
+ENTRYPOINT ["python", "main.py"]
